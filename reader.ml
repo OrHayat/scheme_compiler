@@ -39,7 +39,6 @@ let rec sexpr_eq s1 s2 =
 module Reader: sig
   val read_sexpr : string -> sexpr
   val read_sexprs : string -> sexpr list
-  val sexpr_eq : sexpr -> sexpr -> bool
 end
 = struct
 let normalize_scheme_symbol str =
