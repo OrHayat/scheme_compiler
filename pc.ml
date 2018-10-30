@@ -123,7 +123,7 @@ let make_char equal ch1 = const (fun ch2 -> equal ch1 ch2);;
 let char = make_char (fun ch1 ch2 -> ch1 = ch2);;
 
 let char_ci =
-  make_char (fun ch1 ch2 -> (Char.lowercase_ascii ch1) = (Char.lowercase_ascii ch2));;
+  make_char (fun ch1 ch2 -> (Char.lowercase ch1) = (Char.lowercase ch2));;
 
 let make_word char str = 
   List.fold_right
@@ -153,7 +153,7 @@ let make_range leq ch1 ch2 =
 let range = make_range (fun ch1 ch2 -> ch1 <= ch2);;
 
 let range_ci =
-  make_range (fun ch1 ch2 -> (Char.lowercase_ascii ch1) <= (Char.lowercase_ascii ch2));;
+  make_range (fun ch1 ch2 -> (Char.lowercase ch1) <= (Char.lowercase ch2));;
 
 let nt_any: char list -> 'a * 'a list = const (fun ch -> true);;
 
