@@ -16,6 +16,13 @@ let rec andmap f s =
   | [] -> true
   | car :: cdr -> (f car) && (andmap f cdr);;	  
 
+let lowercase_ascii  =
+  let delta = int_of_char 'A' - int_of_char 'a' in
+  fun ch ->
+  if ('A' <= ch && ch <= 'Z')
+  then char_of_int ((int_of_char ch) - delta)
+  else ch;;
+
 let string_to_list str =
   let rec loop i limit =
     if i = limit then []
@@ -120,8 +127,8 @@ let char = make_char (fun ch1 ch2 -> ch1 = ch2);;
 
 let char_ci =
   make_char (fun ch1 ch2 ->
-	     (Char.lowercase ch1) =
-	       (Char.lowercase ch2));;
+	     (lowercase_ascii ch1) =
+	       (lowercase_ascii ch2));;
 
 let make_word char str = 
   List.fold_right
@@ -152,8 +159,8 @@ let range = make_range (fun ch1 ch2 -> ch1 <= ch2);;
 
 let range_ci =
   make_range (fun ch1 ch2 ->
-	      (Char.lowercase ch1) <=
-		(Char.lowercase ch2));;
+	      (lowercase_ascii ch1) <=
+		(lowercase_ascii ch2));;
 
 let nt_any (s : char list) = const (fun ch -> true) s;;
 
