@@ -113,6 +113,14 @@ let diff nt1 nt2 =
      | None -> result
      | _ -> raise X_no_match;;
 
+let not_followed_by nt1 nt2 s =
+  match (let ((_, s) as result) = (nt1 s) in
+	 try let _ = (nt2 s) in
+	     None
+	 with X_no_match -> (Some(result))) with
+  | None -> raise X_no_match
+  | Some(result) -> result;;
+	  
 let maybe nt =
   fun s ->
   try let (e, s) = (nt s) in
