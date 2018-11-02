@@ -48,14 +48,12 @@ let const pred =
      if (pred e) then (e, s)
      else raise X_no_match;;
 
-let caten nt1 nt2 =
-  fun s ->
+let caten nt1 nt2 s =
   let (e1, s) = (nt1 s) in
   let (e2, s) = (nt2 s) in
   ((e1, e2), s);;
 
-let pack nt f =
-  fun s ->
+let pack nt f s =
   let (e, s) = (nt s) in
   ((f e), s);;
 
@@ -78,15 +76,14 @@ let nt_none _ = raise X_no_match;;
   
 let disj_list nts = List.fold_right disj nts nt_none;;
 
-let delayed thunk =
-  fun s -> thunk() s;;
+let delayed thunk s =
+  thunk() s;;
 
 let nt_end_of_input = function
   | []  -> ([], [])
   | _ -> raise X_no_match;;
 
-let rec star nt =
-  fun s ->
+let rec star nt s =
   try let (e, s) = (nt s) in
       let (es, s) = (star nt s) in
       (e :: es, s)
@@ -96,22 +93,18 @@ let plus nt =
   pack (caten nt (star nt))
        (fun (e, es) -> (e :: es));;
 
-let guard nt pred =
-  fun s ->
-  let ((e, s) as result) = (nt s) in
+let guard nt pred s =
+  let ((e, _) as result) = (nt s) in
   if (pred e) then result
   else raise X_no_match;;
-
-let diff nt1 nt2 =
-  fun s ->
-  let result1 = try Some(nt1 s) with X_no_match -> None in
-  match result1 with
+  
+let diff nt1 nt2 s =
+  match (let result = nt1 s in
+	 try let _ = nt2 s in
+	     None
+	 with X_no_match -> Some(result)) with
   | None -> raise X_no_match
-  | Some(result) ->
-     let result2 = try Some(nt2 s) with X_no_match -> None in
-     match (result2) with
-     | None -> result
-     | _ -> raise X_no_match;;
+  | Some(result) -> result;;
 
 let not_followed_by nt1 nt2 s =
   match (let ((_, s) as result) = (nt1 s) in
@@ -121,8 +114,7 @@ let not_followed_by nt1 nt2 s =
   | None -> raise X_no_match
   | Some(result) -> result;;
 	  
-let maybe nt =
-  fun s ->
+let maybe nt s =
   try let (e, s) = (nt s) in
       (Some(e), s)
   with X_no_match -> (None, s);;
