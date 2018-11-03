@@ -44,7 +44,7 @@ end
 let normalize_scheme_symbol str =
   let s = string_to_list str in
   if (andmap
-	(fun ch -> (ch = (Char.lowercase ch)))
+	(fun ch -> (ch = (lowercase_ascii ch)))
 	s) then str
   else Printf.sprintf "|%s|" str;;
 
