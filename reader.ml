@@ -28,7 +28,8 @@ let rec sexpr_eq s1 s2 =
   match s1, s2 with
   | Bool(b1), Bool(b2) -> b1 = b2
   | Nil, Nil -> true
-  | Number(n1), Number(n2) -> n1 = n2
+  | Number(Float f1), Number(Float f2) -> abs_float(f1 -. f2) < 0.001
+  | Number(Int n1), Number(Int n2) -> n1 = n2
   | Char(c1), Char(c2) -> c1 = c2
   | String(s1), String(s2) -> s1 = s2
   | Symbol(s1), Symbol(s2) -> s1 = s2
