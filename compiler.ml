@@ -52,6 +52,7 @@ const_tbl:
 fvar_tbl:
 " ^ (String.concat "\n" (List.map (fun _ -> "dq T_UNDEFINED") fvars_tbl)) ^ "
 
+global main
 section .text
 main:
     ;; set up the heap
