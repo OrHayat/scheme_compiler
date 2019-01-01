@@ -35,7 +35,7 @@
 %define INT_VAL SKIP_TYPE_TAG
 
 %macro CHAR_VAL 2
-	mov %1, byte [%2+TYPE_SIZE]
+	movzx %1, byte [%2+TYPE_SIZE]
 %endmacro
 
 %define FLOAT_VAL SKIP_TYPE_TAG

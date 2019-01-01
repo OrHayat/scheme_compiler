@@ -454,8 +454,8 @@ bin_add:
     addsd xmm0, xmm1
 
     pop r8
-    cmp r8, 0
-    je .return_float
+    cmp r8, 3
+    jne .return_float
 
     cvttsd2si rsi, xmm0
     MAKE_INT(rax, rsi)
@@ -534,8 +534,8 @@ bin_mul:
     mulsd xmm0, xmm1
 
     pop r8
-    cmp r8, 0
-    je .return_float
+    cmp r8, 3
+    jne .return_float
 
     cvttsd2si rsi, xmm0
     MAKE_INT(rax, rsi)
@@ -614,8 +614,8 @@ bin_sub:
     subsd xmm0, xmm1
 
     pop r8
-    cmp r8, 0
-    je .return_float
+    cmp r8, 3
+    jne .return_float
 
     cvttsd2si rsi, xmm0
     MAKE_INT(rax, rsi)
@@ -694,8 +694,8 @@ bin_div:
     divsd xmm0, xmm1
 
     pop r8
-    cmp r8, 0
-    je .return_float
+    cmp r8, 3
+    jne .return_float
 
     cvttsd2si rsi, xmm0
     MAKE_INT(rax, rsi)
@@ -774,8 +774,8 @@ bin_lt:
     cmpltsd xmm0, xmm1
 
     pop r8
-    cmp r8, 0
-    je .return_float
+    cmp r8, 3
+    jne .return_float
 
     cvttsd2si rsi, xmm0
     MAKE_INT(rax, rsi)
@@ -866,8 +866,8 @@ bin_equ:
     cmpeqsd xmm0, xmm1
 
     pop r8
-    cmp r8, 0
-    je .return_float
+    cmp r8, 3
+    jne .return_float
 
     cvttsd2si rsi, xmm0
     MAKE_INT(rax, rsi)
