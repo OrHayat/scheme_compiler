@@ -7,7 +7,7 @@ is_boolean:
 
     cmp sil, T_BOOL
     jne .wrong_type
-    mov rax, sob_true
+    mov rax, SOB_TRUE_ADDRESS
     jmp .return
 
 .wrong_type:
@@ -25,7 +25,7 @@ is_float:
 
     cmp sil, T_FLOAT
     jne .wrong_type
-    mov rax, sob_true
+    mov rax, SOB_TRUE_ADDRESS
     jmp .return
 
 .wrong_type:
@@ -43,7 +43,7 @@ is_integer:
 
     cmp sil, T_INTEGER
     jne .wrong_type
-    mov rax, sob_true
+    mov rax, SOB_TRUE_ADDRESS
     jmp .return
 
 .wrong_type:
@@ -61,7 +61,7 @@ is_pair:
 
     cmp sil, T_PAIR
     jne .wrong_type
-    mov rax, sob_true
+    mov rax, SOB_TRUE_ADDRESS
     jmp .return
 
 .wrong_type:
@@ -79,7 +79,7 @@ is_null:
 
     cmp sil, T_NIL
     jne .wrong_type
-    mov rax, sob_true
+    mov rax, SOB_TRUE_ADDRESS
     jmp .return
 
 .wrong_type:
@@ -97,7 +97,7 @@ is_char:
 
     cmp sil, T_CHAR
     jne .wrong_type
-    mov rax, sob_true
+    mov rax, SOB_TRUE_ADDRESS
     jmp .return
 
 .wrong_type:
@@ -115,7 +115,7 @@ is_vector:
 
     cmp sil, T_VECTOR
     jne .wrong_type
-    mov rax, sob_true
+    mov rax, SOB_TRUE_ADDRESS
     jmp .return
 
 .wrong_type:
@@ -133,7 +133,7 @@ is_string:
 
     cmp sil, T_STRING
     jne .wrong_type
-    mov rax, sob_true
+    mov rax, SOB_TRUE_ADDRESS
     jmp .return
 
 .wrong_type:
@@ -151,7 +151,7 @@ is_procedure:
 
     cmp sil, T_CLOSURE
     jne .wrong_type
-    mov rax, sob_true
+    mov rax, SOB_TRUE_ADDRESS
     jmp .return
 
 .wrong_type:
@@ -169,7 +169,7 @@ is_symbol:
 
     cmp sil, T_SYMBOL
     jne .wrong_type
-    mov rax, sob_true
+    mov rax, SOB_TRUE_ADDRESS
     jmp .return
 
 .wrong_type:

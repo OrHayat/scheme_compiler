@@ -23,13 +23,20 @@ let lowercase_ascii  =
   then char_of_int ((int_of_char ch) - delta)
   else ch;;
 
+
+  let string_to_list str =
+    let rec loop i acc =
+      if i < 0 then acc else loop (i - 1) (str.[i] :: acc) in
+      loop (String.length str- 1) [];;
+
+(*
 let string_to_list str =
   let rec loop i limit =
     if i = limit then []
     else (String.get str i) :: (loop (i + 1) limit)
   in
   loop 0 (String.length str);;
-
+*)
 let list_to_string s =
   String.concat "" (List.map (fun ch -> String.make 1 ch) s);;
 

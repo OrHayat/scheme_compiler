@@ -27,12 +27,20 @@
 %define MB(n) 1024*KB(n)
 %define GB(n) 1024*MB(n)
 
+%define TYPE(r) byte [r]
 
 %macro SKIP_TYPE_TAG 2
 	mov %1, qword [%2+TYPE_SIZE]	
 %endmacro	
 
+%macro SKIP_TYPE_TAG_ADDRESS 2
+       lea %1,  [%2+TYPE_SIZE]
+%endmacro
+
+%define MAGIC SOB_NIL_ADDRESS
+
 %define INT_VAL SKIP_TYPE_TAG
+
 
 %macro CHAR_VAL 2
 	movzx %1, byte [%2+TYPE_SIZE]
@@ -54,16 +62,126 @@
 
 %define CAR SKIP_TYPE_TAG
 
+%define GET_CAR_ADDRESS SKIP_TYPE_TAG_ADDRESS
+
 %macro CDR 2
 	mov %1, qword [%2+TYPE_SIZE+WORD_SIZE]
 %endmacro
+
+
+%macro GET_CDR_ADDRESS 2
+       lea %1,  [%2+TYPE_SIZE+WORD_SIZE]
+%endmacro
+
+%define LOWER_DATA(sob) qword [sob + TYPE_SIZE]
+
+%define UPPER_DATA(sob) qword [sob + WORD_SIZE + TYPE_SIZE]
+
+%macro SHIFT_FRAME_APPLIC 1 ; %1 = size of frame (constant)
+	push rax
+	mov rax, PARAM_COUNT
+	add rax, 5
+	mov rdi,rax
+	mov rcx,%1
+	mov rdx,1
+	;%rep %1
+	%%apply_frame:
+	dec rax
+	mov r9,rbp
+	mov r10,rdx
+	shl r10,3
+	sub r9,r10
+	mov rbx,qword[r9]
+	;mov rbx,qword [rbp-WORD_SIZE*rdx]
+	mov r9,rbp
+	mov r10,rax
+	shl r10,3
+	add r9,r10
+	mov qword[r9],rbx
+	;mov  qword[rbp+WORD_SIZE*rax],rbx
+	inc rdx
+	loop %%apply_frame
+	pop rax
+	shl rdi,3;calc how many bytes to shift stack back
+	add rsp,rdi
+%endmacro
+
+
+%macro SHIFT_FRAME 1 ; %1 = size of frame (constant)
+	push rax
+	mov rax, PARAM_COUNT
+	add rax, 5
+	mov rcx,rax
+	%assign i 1
+	%rep %1
+	dec rax
+	mov rbx,qword [rbp-WORD_SIZE*i]
+	mov  qword[rbp+WORD_SIZE*rax],rbx
+	%assign i i+1
+	%endrep
+	pop rax
+	shl rcx,3;calc how many bytes to shift stack back
+	add rsp,rcx
+ %endmacro
+
+
 
 %define CLOSURE_ENV CAR
 
 %define CLOSURE_CODE CDR
 
+
+%define PARAM_COUNT qword [rbp+3*WORD_SIZE]
+
+%macro MAKE_LITERAL 2
+	db %1
+	%2
+%endmacro
+
+%define MAKE_LITERAL_INT(val) MAKE_LITERAL T_INTEGER, dq val
+%define MAKE_LITERAL_FLOAT(val) MAKE_LITERAL T_FLOAT, dq val
+%define MAKE_LITERAL_CHAR(val) MAKE_LITERAL T_CHAR, db val
+%define MAKE_NIL db T_NIL
+%define MAKE_VOID db T_VOID
+%define MAKE_BOOL(val) MAKE_LITERAL T_BOOL, db val
+%define MAKE_LITERAL_SYMBOL(val) MAKE_LITERAL T_SYMBOL, dq val
+
+%define MAKE_LITERAL_PAIR(car,cdr) \ MAKE_WORDS_LIT T_PAIR , car, cdr
+
+
+;%macro MAKE_LITERAL_STRING 1
+;		db T_STRING
+;		dq (%%end_str- %%str)
+;%%str:
+;		db %1
+;%%end_str:
+;%endmacro
+
+%macro MAKE_LITERAL_STRING 0-*
+	db T_STRING
+	dq %0
+%rep %0
+	db %1
+%rotate 1
+%endrep
+%endmacro
+
+
+%macro MAKE_LITERAL_VECTOR 0-*
+	db T_VECTOR
+	dq %0
+%rep %0
+	dq %1
+%rotate 1
+%endrep
+%endmacro
+
+%define Get_FVAR(i) [fvar_tbl+i*WORD_SIZE]
+
+%define Get_FVAR_PTR(i) fvar_tbl+i*WORD_SIZE
+
 %define PVAR(n) qword [rbp+(4+n)*WORD_SIZE]
-	
+
 %define SOB_UNDEFINED T_UNDEFINED
 %define SOB_NIL T_NIL
 %define SOB_VOID T_VOID
@@ -79,7 +197,7 @@
 	sub %1, [rsp]
 	add rsp, 8
 %endmacro
-	
+
 ; Creates a short SOB with the
 ; value %2
 ; Returns the result in register %1
@@ -128,7 +246,7 @@
 ; from SOB at %3.
 ; Stores result in register %1
 %macro MAKE_VECTOR 3
-	lea %1, [%2*WORD_SIZE+WORD_SIZE+TYPE_SIZE] 
+	lea %1, [%2*WORD_SIZE+WORD_SIZE+TYPE_SIZE]
 	MALLOC %1, %1
 	mov byte [%1], T_VECTOR
 	mov qword [%1+TYPE_SIZE], %2
@@ -145,15 +263,14 @@
 	sub %1, WORD_SIZE+TYPE_SIZE
 	pop rcx
 %endmacro
-
-;;; Creates a SOB with tag %2 
+;;; Creates a SOB with tag %2
 ;;; from two pointers %3 and %4
 ;;; Stores result in register %1
-%macro MAKE_TWO_WORDS 4 
-        MALLOC %1, TYPE_SIZE+WORD_BYTES*2
+%macro MAKE_TWO_WORDS 4
+        MALLOC %1, TYPE_SIZE+WORD_SIZE*2
         mov byte [%1], %2
         mov qword [%1+TYPE_SIZE], %3
-        mov qword [%1+TYPE_SIZE+WORD_BYTES], %4
+        mov qword [%1+TYPE_SIZE+WORD_SIZE], %4
 %endmacro
 
 %macro MAKE_WORDS_LIT 3
@@ -171,11 +288,14 @@
 %define MAKE_CLOSURE(r, env, body) \
         MAKE_TWO_WORDS r, T_CLOSURE, env, body
 
-	
+
+%define MAKE_LITERAL_CLOSURE(body) \
+MAKE_WORDS_LIT T_CLOSURE, 0, body
+
 extern exit, printf, malloc
 global write_sob, write_sob_if_not_void
 
-	
+
 write_sob_undefined:
 	push rbp
 	mov rbp, rsp
@@ -223,11 +343,10 @@ write_sob_float:
 
 	leave
 	ret
-	
+
 section .data
 .float_format_string:
-	db "%f", 0		
-
+	db "%f", 0
 write_sob_char:
 	push rbp
 	mov rbp, rsp
@@ -254,7 +373,7 @@ write_sob_char:
 	jg .Lregular
 
 	mov rdi, .special
-	jmp .done	
+	jmp .done
 
 .Lnul:
 	mov rdi, .nul
@@ -323,14 +442,14 @@ write_sob_void:
 section .data
 .void:
 	db "#<void>", 0
-	
+
 write_sob_bool:
 	push rbp
 	mov rbp, rsp
 
 	cmp word [rsi], SOB_FALSE
 	je .sobFalse
-	
+
 	mov rdi, .true
 	jmp .continue
 
@@ -339,12 +458,12 @@ write_sob_bool:
 
 .continue:
 	mov rax, 0
-	call printf	
+	call printf
 
 	leave
 	ret
 
-section .data			
+section .data
 .false:
 	db "#f", 0
 .true:
@@ -368,13 +487,11 @@ section .data
 write_sob_string:
 	push rbp
 	mov rbp, rsp
-
 	push rsi
 
 	mov rax, 0
 	mov rdi, .double_quote
 	call printf
-	
 	pop rsi
 
 	STRING_LENGTH rcx, rsi
@@ -400,26 +517,26 @@ write_sob_string:
 	je .ch_backslash
 	cmp rbx, CHAR_SPACE
 	jl .ch_hex
-	
+
 	mov rdi, .fs_simple_char
 	mov rsi, rbx
 	jmp .printf
-	
+
 .ch_hex:
 	mov rdi, .fs_hex_char
 	mov rsi, rbx
 	jmp .printf
-	
+
 .ch_tab:
 	mov rdi, .fs_tab
 	mov rsi, rbx
 	jmp .printf
-	
+
 .ch_page:
 	mov rdi, .fs_page
 	mov rsi, rbx
 	jmp .printf
-	
+
 .ch_return:
 	mov rdi, .fs_return
 	mov rsi, rbx
@@ -455,7 +572,6 @@ write_sob_string:
 	mov rax, 0
 	mov rdi, .double_quote
 	call printf
-
 	leave
 	ret
 section .data
@@ -464,7 +580,7 @@ section .data
 .fs_simple_char:
 	db "%c", 0
 .fs_hex_char:
-	db "\x%02x;", 0	
+	db "\x%02x;", 0
 .fs_tab:
 	db "\t", 0
 .fs_page:
@@ -477,13 +593,12 @@ section .data
 	db CHAR_BACKSLASH, CHAR_DOUBLEQUOTE, 0
 .fs_backslash:
 	db CHAR_BACKSLASH, CHAR_BACKSLASH, 0
-
 write_sob_pair:
 	push rbp
 	mov rbp, rsp
 
 	push rsi
-	
+
 	mov rax, 0
 	mov rdi, .open_paren
 	call printf
@@ -496,9 +611,9 @@ write_sob_pair:
 	mov rsi, [rsp]
 	CDR rsi, rsi
 	call write_sob_pair_on_cdr
-	
+
 	add rsp, 1*8
-	
+
 	mov rdi, .close_paren
 	mov rax, 0
 	call printf
@@ -519,18 +634,17 @@ write_sob_pair_on_cdr:
 	mov bl, byte [rsi]
 	cmp bl, T_NIL
 	je .done
-	
+
 	cmp bl, T_PAIR
 	je .cdrIsPair
-	
+
 	push rsi
-	
+
 	mov rax, 0
 	mov rdi, .dot
 	call printf
-	
-	pop rsi
 
+	pop rsi
 	call write_sob
 	jmp .done
 
@@ -539,11 +653,11 @@ write_sob_pair_on_cdr:
 	push rbx
 	CAR rsi, rsi
 	push rsi
-	
+
 	mov rax, 0
 	mov rdi, .space
 	call printf
-	
+
 	pop rsi
 	call write_sob
 
@@ -567,7 +681,7 @@ write_sob_vector:
 	mov rbp, rsp
 
 	push rsi
-	
+
 	mov rax, 0
 	mov rdi, .fs_open_vector
 	call printf
@@ -597,7 +711,7 @@ write_sob_vector:
 	mov rax, 0
 	mov rdi, .fs_space
 	call printf
-	
+
 	pop rax
 	push rax
 	mov rsi, qword [rax]
@@ -612,7 +726,6 @@ write_sob_vector:
 	mov rax, 0
 	mov rdi, .fs_close_vector
 	call printf
-
 	leave
 	ret
 
@@ -629,7 +742,7 @@ write_sob_symbol:
 	mov rbp, rsp
 
 	SYMBOL_VAL rsi, rsi
-	
+
 	STRING_LENGTH rcx, rsi
 	STRING_ELEMENTS rax, rsi
 
@@ -654,7 +767,7 @@ write_sob_symbol:
 	mov rdi, .fs_simple_char
 	mov rsi, rbx
 	jmp .printf
-	
+
 .ch_hex:
 	mov rdi, .fs_hex_char
 	mov rsi, rbx
@@ -674,12 +787,12 @@ write_sob_symbol:
 .done:
 	leave
 	ret
-	
+
 section .data
 .fs_simple_char:
 	db "%c", 0
 .fs_hex_char:
-	db "\x%02x;", 0	
+	db "\x%02x;", 0
 
 write_sob_closure:
 	push rbp
@@ -701,7 +814,7 @@ section .data
 section .text
 write_sob:
 	mov rbx, 0
-	mov bl, byte [rsi]	
+	mov bl, byte [rsi]
 	jmp qword [.jmp_table + rbx * 8]
 
 section .data
@@ -719,13 +832,39 @@ write_sob_if_not_void:
 	je .continue
 
 	call write_sob
-	
+
 	mov rax, 0
 	mov rdi, .newline
 	call printf
-	
+
 .continue:
 	ret
 section .data
 .newline:
 	db CHAR_NEWLINE, 0
+
+
+section .text
+check_if_closure:
+	cmp TYPE(rax) ,T_CLOSURE
+	jne error_exit_
+	ret
+error_exit_:
+	mov rax,0
+	mov rdi, .error_msg
+	call printf
+	mov rdi,-1
+	call exit
+
+section .data
+	.error_msg:db "attempt to apply non-procedure",10
+
+section .text
+error_exit_call:
+	mov rax,0
+	mov rdi,.error_message
+	call printf
+	mov rdi,-1
+	call exit
+section .data
+.error_message:db "incorrect argument count in call expected %d while got %d",10
